@@ -19,6 +19,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "adc.h"
+#include "opamp.h"
 #include "tim.h"
 #include "usart.h"
 #include "gpio.h"
@@ -58,14 +59,13 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
 static float calc_sound_speed(void)
 {
-	  uint32_t adc_value = HAL_ADC_GetValue(&hadc1);
-	  float temp = adc_value * 330.0f / 4096.0f;
-	  return 331.8f + 0.6f * temp;
+	uint32_t adc_value = HAL_ADC_GetValue(&hadc1);
+	float temp = adc_value * 330.0f / 4096.0f / 4.0f;
+	return 331.8f + 0.6f * temp;
 }
-
-
 int __io_putchar(int ch)
 {
   if (ch == '\n') {
@@ -119,21 +119,30 @@ int main(void)
   MX_USART2_UART_Init();
   MX_TIM2_Init();
   MX_TIM6_Init();
+  MX_OPAMP2_Init();
   MX_ADC1_Init();
   /* USER CODE BEGIN 2 */
+
+  /* USER CODE END 2 */
+
+  /* Infinite loop */
+  /* USER CODE BEGIN WHILE */
   HAL_TIM_Base_Start_IT(&htim6);
   HAL_TIM_Base_Start_IT(&htim2);
   HAL_TIM_IC_Start(&htim2, TIM_CHANNEL_1);
   HAL_TIM_IC_Start(&htim2, TIM_CHANNEL_2);
   HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_3);
-  /* USER CODE END 2 */
-
-  /* Infinite loop */
-  /* USER CODE BEGIN WHILE */
-
+  HAL_ADCEx_Calibration_Start(&hadc1, ADC_SINGLE_ENDED);
+  HAL_ADC_Start(&hadc1);
+  HAL_OPAMP_SelfCalibrate(&hopamp2);
+  HAL_OPAMP_Start(&hopamp2);
   while (1)
   {
-
+      uint32_t adc_value = HAL_ADC_GetValue(&hadc1);
+      float temp = adc_value * 330.0f / 4096.0f / 4.0f;
+      float speed = 331.8f + 0.6f * temp;
+      printf("ADC = %lu, T = %.1f C, speed = %.1f m/s\n", adc_value, temp, speed);
+      HAL_Delay(250);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
